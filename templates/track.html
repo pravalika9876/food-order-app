@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<div class="container" style="padding-top:2rem;">
+    <div style="display:grid; grid-template-columns: 1fr 2fr; gap:2rem;">
+        <div class="glass" style="padding:2rem;">
+            <h2>Order Tracking</h2>
+            <p>Order ID: #{{ order.id }}</p>
+            <div id="status-container" style="margin-top:2rem;">
+                <div class="status-step active" id="step-preparing">
+                    <i class="fas fa-utensils"></i>
+                    <span>Preparing your food...</span>
+                </div>
+                <div class="status-step" id="step-delivery">
+                    <i class="fas fa-motorcycle"></i>
+                    <span>Rider is on the way</span>
+                </div>
+                <div class="status-step" id="step-delivered">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Delivered! Enjoy your meal</span>
+                </div>
+            </div>
+            
+            <div id="confirmation-panel" style="display:none; margin-top:2rem;" class="animate-fade">
+                <button onclick="confirmDelivery()" style="width:100%; padding:1rem; background: #2ed573; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700;">Confirm Delivery Received</button>
+            </div>
+            
+            <style>
+                .status-step {
+                    display: flex;
+                    align-items: center;
+                    gap: 1.5rem;
+                    margin-bottom: 2rem;
+                    opacity: 0.3;
+                    transition: var(--transition);
+                }
+                .status-step.active {
+                    opacity: 1;
+                    color: var(--primary);
+                }
+                .status-step i { font-size: 1.5rem; }
+            </style>
+        </div>
+        
+        <div id="map" class="glass" style="height:500px; border-radius:20px;"></div>
+    </div>
+</div>
+
+<script>
+    var map = L.map('map').setView([12.9716, 77.5946], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    var restaurantPos = [12.9716, 77.5946];
+    var userPos = [12.9786, 77.6006];
+    
+    var restaurantMarker = L.marker(restaurantPos).addTo(map).bindPopup('Restaurant');
+    var userMarker = L.marker(userPos).addTo(map).bindPopup('You');
+    
+    var riderMarker = L.marker(restaurantPos, {
+        icon: L.divIcon({
+            html: '<i class="fas fa-motorcycle" style="color:var(--primary); font-size:1.5rem;"></i>',
+            className: 'rider-icon'
+        })
+    }).addTo(map);
+
+    function simulateDelivery() {
+        let steps = 100;
+        let currentStep = 0;
+        
+        let interval = setInterval(() => {
+            if (currentStep >= steps) {
+                clearInterval(interval);
+                setStatus('Delivered');
+                document.getElementById('confirmation-panel').style.display = 'block';
+                return;
+            }
+            
+            let lat = restaurantPos[0] + (userPos[0] - restaurantPos[0]) * (currentStep / steps);
+            let lng = restaurantPos[1] + (userPos[1] - restaurantPos[1]) * (currentStep / steps);
+            
+            riderMarker.setLatLng([lat, lng]);
+            currentStep++;
+            
+            if (currentStep === 30) setStatus('Out for Delivery');
+        }, 200);
+    }
+
+    function setStatus(status) {
+        document.querySelectorAll('.status-step').forEach(s => s.classList.remove('active'));
+        if (status === 'Preparing') {
+            document.getElementById('step-preparing').classList.add('active');
+        } else if (status === 'Out for Delivery') {
+            document.getElementById('step-delivery').classList.add('active');
+        } else if (status === 'Delivered') {
+            document.getElementById('step-delivered').classList.add('active');
+        }
+    }
+
+    function confirmDelivery() {
+        showToast("Delivery Confirmed! Opening your orders...");
+        setTimeout(() => {
+            location.href = '/orders';
+        }, 2000);
+    }
+
+    // Start simulation after 2 seconds
+    setTimeout(simulateDelivery, 3000);
+
+    // Socket.io for real-time updates
+    const socket = io();
+    socket.on('order_status', (data) => {
+        if(data.order_id == {{ order.id }}) {
+            setStatus(data.status);
+        }
+    });
+</script>
+{% endblock %}

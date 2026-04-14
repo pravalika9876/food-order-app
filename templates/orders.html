@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="padding-top:2rem;">
+    <h2 style="margin-bottom:2rem;">Your Order History</h2>
+    <div style="display:grid; gap:1.5rem;">
+        {% for order in orders %}
+        <div class="glass" style="padding:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h3 style="margin-bottom:0.5rem;">Order #{{ order.id }}</h3>
+                <p style="color:#888;">{{ order.items }}</p>
+                <small>{{ order.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-weight:700; font-size:1.2rem; color:var(--primary); margin-bottom:0.5rem;">${{ order.total_price }}</div>
+                <button onclick="location.href='/track/{{ order.id }}'" style="background:var(--secondary); color:white; border:none; padding:0.5rem 1rem; border-radius:5px; cursor:pointer;">Track Order</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

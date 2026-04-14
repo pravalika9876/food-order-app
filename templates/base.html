@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GastroGo | Premium Food Delivery</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body class="light">
+    <nav class="glass">
+        <a href="/" class="logo">GastroGo.</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if current_user.is_authenticated %}
+                <a href="/orders">Orders</a>
+                <a href="/logout">Logout</a>
+                <a href="javascript:void(0)" onclick="toggleCart()"><i class="fas fa-shopping-cart"></i></a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div style="padding: 1rem 5%; background: #ff4757; color: white; text-align: center;">
+          {% for message in messages %}
+            <div>{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    <!-- Cart Sidebar -->
+    <div id="cart-sidebar" class="cart-sidebar glass">
+        <div style="display:flex; justify:space-between; align-items:center; margin-bottom:2rem;">
+            <h2>Your Cart</h2>
+            <button onclick="toggleCart()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text);">&times;</button>
+        </div>
+        <div id="cart-items-container">
+            <!-- Items rendered via JS -->
+        </div>
+        <div style="margin-top:2rem;">
+            <input type="text" id="delivery-address" placeholder="Delivery Address" style="width:100%; padding:0.8rem; margin-bottom:1rem; border-radius:10px; border:1px solid rgba(0,0,0,0.1); background:rgba(0,0,0,0.05); color:var(--text);">
+            <h3>Total: $<span id="cart-total">0.00</span></h3>
+            <button onclick="checkout()" style="width:100%; padding:1rem; background:var(--primary); color:white; border:none; border-radius:10px; margin-top:1rem; cursor:pointer; font-weight:700;">Checkout & Deliver</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.querySelector('.theme-toggle i');
+            if (body.classList.contains('light')) {
+                body.classList.replace('light', 'dark');
+                icon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.replace('dark', 'light');
+                icon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Initialize theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.replace('light', 'dark');
+            document.querySelector('.theme-toggle i').classList.replace('fa-moon', 'fa-sun');
+        }
+
+        function toggleCart() {
+            const sidebar = document.getElementById('cart-sidebar');
+            sidebar.classList.toggle('open');
+            if(sidebar.classList.contains('open')) {
+                updateCartUI();
+            }
+        }
+
+        function updateCartUI() {
+            fetch('/get_cart')
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('cart-items-container');
+                const totalSpan = document.getElementById('cart-total');
+                if(!container || !totalSpan) return;
+                
+                container.innerHTML = '';
+                if (data.items.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding:2rem; opacity:0.5;">Your cart is empty</p>';
+                } else {
+                    data.items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'cart-item';
+                        div.innerHTML = `
+                            <div style="flex:1;">
+                                <div style="font-weight:600;">${item.name}</div>
+                                <div style="font-size:0.8rem; opacity:0.7;">$${item.price}</div>
+                            </div>
+                            <button onclick="removeFromCart(${item.id})" style="background:none; border:none; color:#ff4757; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+                totalSpan.innerText = data.total;
+            })
+            .catch(err => {
+                console.error("Cart fetch error:", err);
+                showToast("Error updating cart");
+            });
+        }
+
+        function checkout() {
+            const addressInput = document.getElementById('delivery-address');
+            const address = addressInput ? addressInput.value : '';
+            if(!address) {
+                showToast("Please enter a delivery address");
+                return;
+            }
+            
+            fetch('/checkout', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({address: address})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    location.href = '/track/' + data.order_id;
+                }
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.right = '20px';
+            toast.style.background = 'var(--primary)';
+            toast.style.color = 'white';
+            toast.style.padding = '1rem 2rem';
+            toast.style.borderRadius = '10px';
+            toast.style.zIndex = '3000';
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function addToCart(itemId, itemName) {
+            fetch('/add_to_cart', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({item_id: itemId})
+            }).then(res => res.json()).then(data => {
+                if(data.status === 'success') {
+                    showToast(`Added ${itemName} to cart!`);
+                    updateCartUI();
+                    if(typeof showRecommendations === 'function') {
+                        showRecommendations(itemName);
+                    }
+                } else {
+                    showToast("Failed to add item");
+                }
+            }).catch(err => {
+                showToast("Error adding item");
+            });
+        }
+
+        function removeFromCart(cartItemId) {
+            fetch('/remove_from_cart', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({cart_item_id: cartItemId})
+            }).then(res => res.json()).then(data => {
+                if(data.status === 'success') {
+                    updateCartUI();
+                }
+            });
+        }
+
+        // Voice Search Setup
+        const voiceBtn = document.querySelector('.voice-btn');
+        if (voiceBtn) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    const searchInput = document.getElementById('search-input');
+                    if(searchInput) {
+                        searchInput.value = transcript;
+                        searchFood(transcript);
+                    }
+                };
+                voiceBtn.onclick = () => recognition.start();
+            }
+        }
+    </script>
+</body>
+</html>

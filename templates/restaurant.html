@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero" style="height:40vh; background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{ restaurant.image_url }}');">
+    <h1>{{ restaurant.name }}</h1>
+    <p>{{ restaurant.category }} • <i class="fas fa-star"></i> {{ restaurant.rating }}</p>
+</div>
+
+<div class="container" style="margin-top:-50px;">
+    <div class="glass" style="padding:2rem; margin-bottom:3rem;">
+        <div class="section-title">
+            <h2>Menu</h2>
+        </div>
+        
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:2rem;">
+            {% for item in menu %}
+            <div class="glass" style="display:flex; padding:1.5rem; gap:1.5rem; align-items:center;">
+                <img src="{{ item.image_url }}" alt="{{ item.name }}" style="width:100px; height:100px; object-fit:cover; border-radius:15px;">
+                <div style="flex:1;">
+                    <h3 style="margin-bottom:0.5rem;">{{ item.name }}</h3>
+                    <p style="font-size:0.9rem; color:#888; margin-bottom:1rem;">{{ item.description }}</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; color:var(--primary);">${{ item.price }}</span>
+                        <button onclick="addToCart({{ item.id }}, '{{ item.name }}')" style="background:var(--primary); color:white; border:none; padding:0.5rem 1rem; border-radius:10px; cursor:pointer;"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- AI Feature: Recommendations -->
+    <div id="recommendations" class="glass" style="padding:2rem; display:none; margin-bottom:3rem;">
+        <h3>People Also Ordered</h3>
+        <div id="rec-items" style="display:flex; gap:1.5rem; margin-top:1rem; overflow-x:auto; padding-bottom:1rem;">
+            <!-- Recommended items will appear here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    const recommendations = {
+        "Classic Cheeseburger": [
+            {id: 101, name: "Truffle Fries", price: 5.99, img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=300"},
+            {id: 102, name: "Coke", price: 2.50, img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=300"}
+        ],
+        "Salmon Nigiri": [
+            {id: 103, name: "Miso Soup", price: 4.50, img: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=300"},
+            {id: 104, name: "Matcha Tea", price: 3.99, img: "https://images.unsplash.com/photo-1582736465955-4487cb979a45?w=300"}
+        ]
+    };
+
+    function showRecommendations(itemName) {
+        if(recommendations[itemName]) {
+            const recContainer = document.getElementById('recommendations');
+            const recItems = document.getElementById('rec-items');
+            recItems.innerHTML = '';
+            recommendations[itemName].forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'glass';
+                div.style.minWidth = '200px';
+                div.style.padding = '1rem';
+                div.innerHTML = `
+                    <img src="${item.img}" style="width:100%; height:120px; object-fit:cover; border-radius:10px;">
+                    <h4 style="margin:0.5rem 0;">${item.name}</h4>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>$${item.price}</span>
+                        <button onclick="addToCart(${item.id}, '${item.name}')" style="background:var(--accent); border:none; color:white; padding:5px 10px; border-radius:5px; cursor:pointer;">Add</button>
+                    </div>
+                `;
+                recItems.appendChild(div);
+            });
+            recContainer.style.display = 'block';
+        }
+    }
+    
+    // Initial cart load
+    updateCartUI();
+</script>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="hero">
+    <h1 class="animate-fade">Hungry? We've Got You.</h1>
+    <div class="search-bar animate-fade" style="animation-delay: 0.2s;">
+        <i class="fas fa-search" style="color:#888; margin-right:10px;"></i>
+        <input type="text" id="search-input" placeholder="Search for sushi, burgers, or pizza...">
+        <button class="voice-btn" title="Voice Search"><i class="fas fa-microphone"></i></button>
+        <button onclick="detectLocation()" style="background:none; border:none; color:var(--primary); cursor:pointer; margin-left:10px;" title="Detect Location"><i class="fas fa-location-arrow"></i></button>
+    </div>
+    <p id="location-text" style="font-size:0.9rem; margin-top:1rem;"></p>
+</header>
+
+    <div class="section-title animate-fade" style="animation-delay: 0.3s; margin-top: 2rem;">
+        <h2>Top Picks for You</h2>
+    </div>
+    <div style="display:flex; gap:1.5rem; overflow-x:auto; padding-bottom:1rem; margin-bottom:3rem;" class="animate-fade" style="animation-delay: 0.4s;">
+        <div class="glass" style="min-width:200px; padding:1rem; text-align:center; cursor:pointer;">
+            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200" style="width:100%; height:120px; object-fit:cover; border-radius:15px; margin-bottom:0.5rem;">
+            <h4>Salads</h4>
+        </div>
+        <div class="glass" style="min-width:200px; padding:1rem; text-align:center; cursor:pointer;">
+            <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200" style="width:100%; height:120px; object-fit:cover; border-radius:15px; margin-bottom:0.5rem;">
+            <h4>Pizza</h4>
+        </div>
+        <div class="glass" style="min-width:200px; padding:1rem; text-align:center; cursor:pointer;">
+            <img src="https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=200" style="width:100%; height:120px; object-fit:cover; border-radius:15px; margin-bottom:0.5rem;">
+            <h4>Tacos</h4>
+        </div>
+        <div class="glass" style="min-width:200px; padding:1rem; text-align:center; cursor:pointer;">
+            <img src="https://images.unsplash.com/photo-1583623025817-d180a2221d0a?w=200" style="width:100%; height:120px; object-fit:cover; border-radius:15px; margin-bottom:0.5rem;">
+            <h4>Sushi</h4>
+        </div>
+        <div class="glass" style="min-width:200px; padding:1rem; text-align:center; cursor:pointer;">
+            <img src="https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=200" style="width:100%; height:120px; object-fit:cover; border-radius:15px; margin-bottom:0.5rem;">
+            <h4>Burgers</h4>
+        </div>
+    </div>
+
+    <div class="section-title animate-fade" style="animation-delay: 0.5s;">
+        <h2>Explore Restaurants</h2>
+        <div style="font-size:0.9rem; color:var(--primary); cursor:pointer;">See All <i class="fas fa-arrow-right"></i></div>
+    </div>
+    
+    <div class="restaurant-grid" id="restaurant-grid">
+        <!-- Restaurants will be loaded here -->
+        {% for restaurant in restaurants %}
+        <div class="restaurant-card glass animate-fade" style="animation-delay: {{ loop.index0 * 0.1 }}s;" onclick="location.href='/restaurant/{{ restaurant.id }}'">
+            <img src="{{ restaurant.image_url }}" alt="{{ restaurant.name }}" class="restaurant-image">
+            <div class="restaurant-info">
+                <div class="restaurant-name">{{ restaurant.name }}</div>
+                <div class="restaurant-meta">
+                    <span>{{ restaurant.category }} • 25-30 min</span>
+                    <span class="rating"><i class="fas fa-star"></i> {{ restaurant.rating }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function searchFood(query) {
+        window.location.href = '/search?q=' + query;
+    }
+
+    function detectLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const { latitude, longitude } = position.coords;
+                document.getElementById('location-text').innerText = `Location detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                // Optionally send to backend to find nearby restaurants
+                // fetch('/nearby?lat=' + latitude + '&lng=' + longitude)
+            });
+        }
+    }
+</script>
+{% endblock %}

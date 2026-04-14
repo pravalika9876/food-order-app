@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display:flex; justify-content:center; align-items:center; height:80vh;">
+    <div class="glass" style="padding:3rem; width:100%; max-width:400px; text-align:center;">
+        <h2 style="margin-bottom:2rem;">Create Account</h2>
+        <form method="POST">
+            <input type="text" name="username" placeholder="Choose a Username (e.g. Pravalika)" required style="width:100%; padding:1rem; margin-bottom:1rem; border-radius:10px; border:none; background:rgba(0,0,0,0.05); color:var(--text);">
+            <input type="email" name="email" placeholder="Email Address (user@example.com)" required style="width:100%; padding:1rem; margin-bottom:1rem; border-radius:10px; border:none; background:rgba(0,0,0,0.05); color:var(--text);">
+            <input type="password" name="password" placeholder="Create Password" required style="width:100%; padding:1rem; margin-bottom:2rem; border-radius:10px; border:none; background:rgba(0,0,0,0.05); color:var(--text);">
+            <button type="submit" style="width:100%; padding:1rem; background:var(--primary); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700;">Sign Up</button>
+        </form>
+        <p style="margin-top:1.5rem; font-size:0.9rem;">Already have an account? <a href="/login" style="color:var(--primary);">Login</a></p>
+    </div>
+</div>
+{% endblock %}
